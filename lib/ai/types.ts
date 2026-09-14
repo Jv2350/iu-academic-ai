@@ -1,7 +1,7 @@
 export type ChatMessage = {
   role: "system" | "user" | "assistant";
   content: string;
-  sources?: string[];
+  sources?: import("@/lib/rag/types").SourceCitation[];
 };
 
 export type GenerateTextInput = {

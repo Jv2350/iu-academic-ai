@@ -19,9 +19,9 @@ export function ChatWindow() {
     setMessages(nextMessages); setLoading(true); setError(null);
     try {
       const response = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: content }) });
-      const payload = (await response.json()) as { answer?: string; error?: string; sources?: Array<{ title: string }> };
+      const payload = (await response.json()) as { answer?: string; error?: string; sources?: ChatMessage["sources"] };
       if (!response.ok || !payload.answer) throw new Error(payload.error || "The assistant could not respond.");
-      setMessages([...nextMessages, { role: "assistant", content: payload.answer, sources: payload.sources?.map((source) => source.title) }]);
+      setMessages([...nextMessages, { role: "assistant", content: payload.answer, sources: payload.sources }]);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "The assistant could not respond.");
     } finally { setLoading(false); }

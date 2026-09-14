@@ -6,6 +6,13 @@ export type DocumentChunk = {
   metadata: Record<string, unknown>;
 };
 
+export type SourceCitation = {
+  title: string;
+  section?: string;
+  href?: string;
+  type: "academic_document" | "student_record";
+};
+
 export interface DocumentRetriever {
   search(query: string, limit?: number): Promise<DocumentChunk[]>;
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, Copy, RefreshCw, ThumbsDown, ThumbsUp, Sparkles, User } from "lucide-react";
 import type { ChatMessage } from "@/lib/ai/types";
+import { SourceCard } from "./source-card";
 
 function renderContent(content: string) {
   return content.split("\n").map((line, index) => {
@@ -29,12 +30,7 @@ export function MessageBubble({ message, onRegenerate }: { message: ChatMessage;
       <div className={`max-w-[85%] ${user ? "order-first" : ""}`}>
         <div className={`rounded-2xl px-4 py-3 text-sm leading-6 ${user ? "rounded-tr-sm bg-indigo-600 text-white" : "rounded-tl-sm border border-slate-200 bg-white text-slate-700 shadow-sm"}`}>
           {renderContent(message.content)}
-          {!user && message.sources && message.sources.length > 0 && (
-            <div className="mt-4 border-t border-slate-200 pt-3 text-xs text-slate-500">
-              <span className="font-semibold text-slate-700">Sources: </span>
-              {message.sources.join(", ")}
-            </div>
-          )}
+          {!user && message.sources?.map((source) => <SourceCard key={`${source.title}-${source.section}`} source={source} />)}
         </div>
         {!user && (
           <div className="mt-2 flex items-center gap-1 text-slate-400">

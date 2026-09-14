@@ -4,9 +4,13 @@ import { getLlmProvider } from "@/lib/ai/provider";
 import { classifyIntent } from "@/lib/ai/intent";
 import { ACADEMIC_ASSISTANT_SYSTEM_PROMPT } from "@/lib/ai/system-prompt";
 import { getDemoAcademicContext } from "@/lib/academic/demo-data";
+import { formatKnowledgeContext, searchKnowledge } from "@/lib/knowledge";
+import type { SourceCitation } from "@/lib/rag/types";
 
 const UNAVAILABLE =
   "I couldn't find reliable information about that in the available academic data.";
+const UNSUPPORTED =
+  "I'm designed primarily to assist with academic information. I don't have reliable information for that request.";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -34,13 +38,35 @@ export async function POST(request: Request) {
     const intent = classifyIntent(message);
     if (intent === "unsupported") {
       return NextResponse.json({
+        answer: UNSUPPORTED,
+        intent,
+        sources: [],
+      });
+    }
+
+    const studentContext = getDemoAcademicContext(intent, user.id);
+    const knowledgeChunks = await searchKnowledge(message);
+    const knowledgeContext = formatKnowledgeContext(knowledgeChunks);
+    const sources: SourceCitation[] = [
+      ...studentContext.sources,
+      ...knowledgeChunks.map((chunk) => ({
+        title: chunk.title,
+        section: chunk.section,
+        href: chunk.href,
+        type: "academic_document" as const,
+      })),
+    ];
+    const retrievedContext = [studentContext.text, knowledgeContext]
+      .filter(Boolean)
+      .join("\n\n");
+    if (!retrievedContext) {
+      return NextResponse.json({
         answer: UNAVAILABLE,
         intent,
         sources: [],
       });
     }
 
-    const context = getDemoAcademicContext(intent, user.id);
     const provider = getLlmProvider();
     const answer = await provider.generateText({
       messages: [
@@ -51,7 +77,7 @@ export async function POST(request: Request) {
 Detected intent: ${intent}
 
 Retrieved context:
-${context.text || UNAVAILABLE}`,
+${retrievedContext}`,
         },
         { role: "user", content: message.trim() },
       ],
@@ -60,7 +86,7 @@ ${context.text || UNAVAILABLE}`,
     return NextResponse.json({
       answer,
       intent,
-      sources: context.sources,
+      sources,
     });
   } catch (error) {
     console.error("Chat request failed", error);
