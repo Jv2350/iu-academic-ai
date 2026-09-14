@@ -20,6 +20,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { demoStudent } from "@/data/student";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -129,8 +130,8 @@ export function Sidebar({
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-slate-900">Demo Student</p>
-              <p className="truncate text-xs text-slate-500">MSc Cyber Security · Sem 1</p>
+              <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{demoStudent.name}</p>
+              <p className="truncate text-xs text-slate-500">{demoStudent.program} · Sem {demoStudent.semester}</p>
             </div>
             <Badge variant="outline" className="hidden border-indigo-200 bg-white text-[10px] text-indigo-600 sm:inline-flex">
               Student
