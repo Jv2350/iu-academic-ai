@@ -1,3 +1,12 @@
+import { AlertTriangle, CheckCircle2, Info } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { ModuleHeader } from "@/components/academic/module-header";
+import { attendance } from "@/data/attendance";
+
+function status(value: number): [string, string, LucideIcon] { return value >= 80 ? ["Good", "text-emerald-700 bg-emerald-50", CheckCircle2] : value >= 75 ? ["Warning", "text-amber-700 bg-amber-50", AlertTriangle] : ["Critical", "text-red-700 bg-red-50", AlertTriangle]; }
+
 export default function AttendancePage() {
-  return <main className="p-6"><h1 className="text-2xl font-semibold">Attendance</h1></main>;
+  const average = Math.round(attendance.reduce((sum, item) => sum + item.percentage, 0) / attendance.length);
+  return <main className="mx-auto w-full max-w-6xl space-y-8 p-5 sm:p-8"><ModuleHeader eyebrow="Student record" title="Attendance" description="Track your attendance subject by subject and spot where to focus." action="Explain my attendance" href="/chat?prompt=Explain%20my%20attendance" /><Card className="border-indigo-100 bg-indigo-50/60 shadow-sm"><CardContent className="flex gap-3 p-5 text-sm text-indigo-900"><Info className="mt-0.5 size-5 shrink-0 text-indigo-600" /><p>Your current average attendance is <strong>{average}%</strong>. Based on the configured demo requirement of 75%, you currently have a small attendance buffer. This is demonstration data, not an official university policy.</p></CardContent></Card><div className="grid gap-4 md:grid-cols-2">{attendance.map((item) => { const [label, tone, Icon] = status(item.percentage); return <Card key={item.subject} className="border-slate-200/80 shadow-sm"><CardContent className="p-5"><div className="flex items-center justify-between"><h2 className="font-semibold text-slate-900">{item.subject}</h2><span className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${tone}`}><Icon className="size-3.5" />{label}</span></div><div className="mt-5 flex items-end justify-between"><span className="text-3xl font-semibold tracking-tight text-slate-950">{item.percentage}%</span><span className="text-xs text-slate-400">attendance</span></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100"><div className={`h-full rounded-full ${item.percentage >= 80 ? "bg-emerald-500" : item.percentage >= 75 ? "bg-amber-500" : "bg-red-500"}`} style={{ width: `${item.percentage}%` }} /></div></CardContent></Card> })}</div></main>;
 }

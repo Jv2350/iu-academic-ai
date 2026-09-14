@@ -5,8 +5,8 @@ import { Paperclip, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
-export function ChatInput({ disabled, onSubmit }: { disabled?: boolean; onSubmit: (content: string) => void }) {
-  const [value, setValue] = useState("");
+export function ChatInput({ disabled, onSubmit, initialValue = "" }: { disabled?: boolean; onSubmit: (content: string) => void; initialValue?: string }) {
+  const [value, setValue] = useState(initialValue);
   const fileRef = useRef<HTMLInputElement>(null);
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

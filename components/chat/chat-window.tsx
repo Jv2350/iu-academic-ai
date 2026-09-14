@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 
 const suggestions = ["When is my next exam?", "What are the exam guidelines?", "What is my attendance?", "What assignments are pending?", "What are the latest notices?", "Help me prepare for my exam"];
 
-export function ChatWindow() {
+export function ChatWindow({ initialPrompt = "" }: { initialPrompt?: string }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +50,7 @@ export function ChatWindow() {
         {loading && <div className="flex items-center gap-3 text-sm text-slate-500"><span className="flex size-8 items-center justify-center rounded-lg bg-slate-950 text-white"><Sparkles className="size-4" /></span><span>Academic AI is thinking<span className="thinking-dots">...</span></span></div>}
         {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
       </div>
-      <div className="mt-4"><ChatInput disabled={loading} onSubmit={sendMessage} /><p className="mt-2 text-center text-[11px] text-slate-400">Academic AI can make mistakes. Verify important information with official university sources.</p></div>
+      <div className="mt-4"><ChatInput initialValue={initialPrompt} disabled={loading} onSubmit={sendMessage} /><p className="mt-2 text-center text-[11px] text-slate-400">Academic AI can make mistakes. Verify important information with official university sources.</p></div>
     </section>
   );
 }
