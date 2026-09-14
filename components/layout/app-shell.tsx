@@ -12,7 +12,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
 
-  if (pathname === "/login") return <>{children}</>;
+  if (pathname === "/login" || pathname === "/") return <>{children}</>;
 
   return (
     <div className="flex min-h-screen bg-[#f7f8fb] text-slate-950">
