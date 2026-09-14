@@ -6,6 +6,7 @@ import { ChatInput } from "./chat-input";
 import { MessageBubble } from "./message-bubble";
 import type { ChatMessage } from "@/lib/ai/types";
 import { Button } from "@/components/ui/button";
+import { ChatHistory } from "./chat-history";
 
 const suggestions = ["When is my next exam?", "What are the exam guidelines?", "What is my attendance?", "What assignments are pending?", "What are the latest notices?", "Help me prepare for my exam"];
 
@@ -13,15 +14,25 @@ export function ChatWindow({ initialPrompt = "" }: { initialPrompt?: string }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string>();
+
+  async function selectSession(id: string) {
+    const response = await fetch(`/api/chat/sessions/${id}`);
+    if (!response.ok) return;
+    const payload = (await response.json()) as { data?: Array<{ role: ChatMessage["role"]; content: string }> };
+    setSessionId(id);
+    setMessages(payload.data?.filter((message) => message.role !== "system") ?? []);
+  }
 
   async function sendMessage(content: string) {
     const nextMessages = [...messages, { role: "user" as const, content }];
     setMessages(nextMessages); setLoading(true); setError(null);
     try {
-      const response = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: content }) });
-      const payload = (await response.json()) as { answer?: string; error?: string; sources?: ChatMessage["sources"] };
-      if (!response.ok || !payload.answer) throw new Error(payload.error || "The assistant could not respond.");
-      setMessages([...nextMessages, { role: "assistant", content: payload.answer, sources: payload.sources }]);
+      const response = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: content, ...(sessionId ? { sessionId } : {}) }) });
+      const payload = (await response.json()) as { message?: string; error?: string; sources?: ChatMessage["sources"]; sessionId?: string };
+      if (!response.ok || !payload.message) throw new Error(payload.error || "The assistant could not respond.");
+      if (payload.sessionId) setSessionId(payload.sessionId);
+      setMessages([...nextMessages, { role: "assistant", content: payload.message, sources: payload.sources }]);
     } catch (requestError) {
       setError(requestError instanceof TypeError ? "Connection lost. Please check your connection and try again." : requestError instanceof Error ? requestError.message : "I'm having trouble connecting to the academic AI service. Please try again.");
     } finally { setLoading(false); }
@@ -33,7 +44,9 @@ export function ChatWindow({ initialPrompt = "" }: { initialPrompt?: string }) {
   }
 
   return (
-    <section className="mx-auto flex min-h-[calc(100vh-190px)] w-full max-w-4xl flex-col">
+    <section className="mx-auto flex min-h-[calc(100vh-190px)] w-full max-w-5xl gap-5">
+      <ChatHistory activeId={sessionId} onNew={() => { setSessionId(undefined); setMessages([]); setError(null); }} onSelect={(id) => void selectSession(id)} />
+      <div className="flex min-w-0 flex-1 flex-col">
       <div className="mb-5 flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm font-medium text-slate-600"><span className="size-2 rounded-full bg-emerald-500" /> Academic Copilot <span className="text-slate-400">• Online</span></div>
         {messages.length > 0 && <Button variant="ghost" size="sm" onClick={() => setMessages([])} className="gap-2 text-slate-500"><Eraser className="size-4" /> Clear conversation</Button>}
@@ -51,6 +64,7 @@ export function ChatWindow({ initialPrompt = "" }: { initialPrompt?: string }) {
         {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
       </div>
       <div className="mt-4"><ChatInput initialValue={initialPrompt} disabled={loading} onSubmit={sendMessage} /><p className="mt-2 text-center text-[11px] text-slate-400">Academic AI can make mistakes. Verify important information with official university sources.</p></div>
+      </div>
     </section>
   );
 }

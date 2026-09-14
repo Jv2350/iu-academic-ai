@@ -21,6 +21,7 @@ export async function POST(request: Request) {
   }
 
   const message = (body as { message?: unknown })?.message;
+  const requestedSessionId = (body as { sessionId?: unknown })?.sessionId;
   if (typeof message !== "string" || message.trim().length === 0) {
     return NextResponse.json({ error: "Please enter a question." }, { status: 400 });
   }
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
     const intent = classifyIntent(message);
     if (intent === "unsupported") {
       return NextResponse.json({
-        answer: UNSUPPORTED,
+        message: UNSUPPORTED,
         intent,
         sources: [],
       });
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
       .join("\n\n");
     if (!retrievedContext) {
       return NextResponse.json({
-        answer: UNAVAILABLE,
+        message: UNAVAILABLE,
         intent,
         sources: [],
       });
@@ -94,10 +95,35 @@ ${typeof requestContext === "string" ? requestContext : "None provided"}`,
       ],
     });
 
+    let sessionId: string | undefined =
+      typeof requestedSessionId === "string" ? requestedSessionId : undefined;
+    const { data: student } = await supabase
+      .from("students")
+      .select("id")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+    if (student) {
+      if (!sessionId) {
+        const { data: session } = await supabase
+          .from("chat_sessions")
+          .insert({ student_id: student.id, title: message.trim().slice(0, 60) })
+          .select("id")
+          .single();
+        sessionId = session?.id;
+      }
+      if (sessionId) {
+        await supabase.from("chat_messages").insert([
+          { session_id: sessionId, role: "user", content: message.trim() },
+          { session_id: sessionId, role: "assistant", content: answer },
+        ]);
+      }
+    }
+
     return NextResponse.json({
-      answer,
+      message: answer,
       intent,
       sources,
+      ...(sessionId ? { sessionId } : {}),
     });
   } catch (error) {
     console.error("Chat request failed", error);
