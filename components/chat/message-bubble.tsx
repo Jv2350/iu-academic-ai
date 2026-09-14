@@ -29,6 +29,12 @@ export function MessageBubble({ message, onRegenerate }: { message: ChatMessage;
       <div className={`max-w-[85%] ${user ? "order-first" : ""}`}>
         <div className={`rounded-2xl px-4 py-3 text-sm leading-6 ${user ? "rounded-tr-sm bg-indigo-600 text-white" : "rounded-tl-sm border border-slate-200 bg-white text-slate-700 shadow-sm"}`}>
           {renderContent(message.content)}
+          {!user && message.sources && message.sources.length > 0 && (
+            <div className="mt-4 border-t border-slate-200 pt-3 text-xs text-slate-500">
+              <span className="font-semibold text-slate-700">Sources: </span>
+              {message.sources.join(", ")}
+            </div>
+          )}
         </div>
         {!user && (
           <div className="mt-2 flex items-center gap-1 text-slate-400">
