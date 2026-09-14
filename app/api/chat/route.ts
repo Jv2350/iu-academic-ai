@@ -28,7 +28,16 @@ export async function POST(request: Request) {
   }
 
   try {
-    const answer = await getLlmProvider().generateText({ messages });
+    const answer = await getLlmProvider().generateText({
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are IU Academic AI, an academic copilot. Identify whether the request is about exams, timetable, attendance, assignments, notices, study planning, or general academic support. Answer only from the supplied academic context or conversation. Never invent dates, venues, grades, policies, or student information. If reliable information is unavailable, say exactly: \"I couldn't find reliable information about that in the available academic data.\" Keep responses clear and action-oriented. When context includes a source, name it under a final Sources line.",
+        },
+        ...messages,
+      ],
+    });
     return NextResponse.json({ answer });
   } catch (error) {
     console.error("Chat request failed", error);
