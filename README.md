@@ -1,4 +1,21 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# IU Academic AI
+
+Next.js, TypeScript, Tailwind CSS, shadcn/ui, Supabase, and a provider-neutral
+server-side LLM integration for academic assistance.
+
+## Local setup
+
+1. Install dependencies with `npm install`.
+2. Copy `.env.example` to `.env.local`.
+3. Add Supabase project credentials and a server-only LLM API key/model.
+4. Apply the SQL in `supabase/migrations/` to a Supabase project with the
+   `vector` extension enabled.
+5. Start the app with `npm run dev`.
+
+The browser only calls `/api/chat`; `LLM_API_KEY` and provider requests remain
+inside the Next.js server route. The LLM client is abstracted behind
+`LlmProvider`, and document retrieval is abstracted behind `DocumentRetriever`
+so providers and indexing strategies can be changed independently.
 
 ## Getting Started
 
