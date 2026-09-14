@@ -1,10 +1,22 @@
 # IU Academic AI
 
+> A student-first academic copilot for finding reliable university information,
+> understanding study material, and taking the next academic action.
+
+**Live demo:** [iu-academic-ai.vercel.app](https://iu-academic-ai.vercel.app)
+
+To try the hosted prototype, open the live demo, select **Explore demo**, and
+then choose **Continue with demo account**. The application is intentionally
+labelled as a prototype and uses demonstration academic data.
+
 ## Overview
 
 IU Academic AI is a student-focused Academic Copilot prototype. It brings
 exams, timetable, attendance, assignments, notices, events, library guidance,
-study tools, and grounded academic conversations into one workspace.
+study tools, and grounded academic conversations into one workspace. Instead
+of making students search across separate pages and policy documents, the
+assistant turns a natural-language question into a useful answer with relevant
+context, source information, and a clear next step.
 
 This prototype was created for the **IU School AI Platform Development Team
 selection task**.
@@ -33,24 +45,56 @@ Login → Dashboard → Ask Academic AI → Retrieve context → Answer → Sour
 
 ## Features
 
-- Supabase email/password authentication
-- Clearly labeled demo student account
-- Protected student application routes
-- Responsive sidebar and application shell
-- Student dashboard with academic overview
-- Exams, timetable, attendance, assignments, notices, events, and library modules
-- Academic Assistant at `/chat`
-- Structured chat responses with intent and source metadata
-- Chat history with new, rename, delete, and continue actions
-- AI Study Mode at `/study`
-- Interactive MCQ practice and scoring
-- Contextual “Ask AI” actions from academic modules
-- Markdown-like assistant responses, copying, feedback controls, and loading states
-- Academic knowledge base with clickable source pages
-- Keyword retrieval fallback with a pgvector-ready architecture
-- Contact Support workflow
-- Light, dark, and system themes
-- Prototype indicator: `Prototype • Demo Academic Data`
+### Student workspace
+
+- **Dashboard:** A quick academic overview with upcoming exams, attendance,
+  assignments, notices, and shortcuts to frequent tasks.
+- **Exams:** Review upcoming assessments, dates, venues, subjects, and exam
+  guidance in one place.
+- **Timetable:** See the student's weekly schedule and move from a timetable
+  item directly into an AI question.
+- **Attendance:** Inspect subject-level attendance and identify areas that may
+  need attention.
+- **Assignments:** Track assignment status, deadlines, subjects, and available
+  instructions.
+- **Notices and events:** Keep university announcements, academic events, and
+  important dates visible and easy to scan.
+- **Library:** Browse library guidance and rules without searching through
+  separate documents.
+- **Settings and themes:** Manage the account experience with light, dark, and
+  system theme options.
+
+### AI-powered study and support
+
+- **Academic Assistant (`/chat`):** Ask questions such as "When is my next
+  exam?", "How much attendance do I have?", or "What are the library rules?"
+  using normal language.
+- **Context-aware answers:** The assistant classifies the request, retrieves
+  relevant student or academic context, and produces a structured response
+  instead of treating every question as a generic chat prompt.
+- **Source-aware responses:** Answers can include source cards that point back
+  to the relevant academic document or policy. Sources are shown only when the
+  backend has source metadata.
+- **Conversation history:** Create, rename, continue, and delete chat sessions
+  so recurring questions remain organized.
+- **Ask AI from modules:** Academic pages can pass the current context into the
+  assistant, reducing the amount of information a student has to repeat.
+- **AI Study Mode (`/study`):** Summarize material, explain difficult topics,
+  and practise with interactive multiple-choice questions and scoring.
+- **Support workflow:** Submit a support request when a question needs human
+  follow-up or falls outside the assistant's supported scope.
+
+### Product and engineering features
+
+- Supabase email/password authentication with protected application routes.
+- Student-specific queries based on the authenticated Supabase identity.
+- Responsive application shell with accessible, reusable UI components.
+- Server-side LLM abstraction compatible with OpenAI-style providers.
+- Knowledge base with section-aware chunking and a pgvector-ready retrieval
+  design.
+- Request validation, sanitized errors, server-only provider credentials, and
+  Supabase Row Level Security policies.
+- Clearly labelled prototype data through `Prototype • Demo Academic Data`.
 
 Demo content is intentionally labeled as demonstration information and must
 not be treated as official university policy or records.
@@ -106,9 +150,45 @@ Next.js Route Handlers, which keep provider credentials on the server.
 - OpenAI-compatible server-side provider implementation
 - Replaceable embedding provider interface
 
+## AI Chatbot Use Case
+
+The chatbot is the main interaction layer for the platform. It is designed for
+the moments when a student knows what they need but does not know which module,
+record, or policy document contains the answer.
+
+For example, a student can ask:
+
+```text
+I have an exam next week. What do I need to carry, and where can I find the
+latest examination rules?
+```
+
+The assistant can combine the student's upcoming exam information with the
+retrieved examination guidance, answer in one conversation, and show the
+supporting source. The same pattern works for attendance questions,
+assignment deadlines, timetable checks, notices, library rules, and study
+help.
+
+The chatbot is intentionally more constrained than a general-purpose chatbot:
+
+1. It identifies the intent, such as `exam`, `attendance`, `assignment`,
+  `timetable`, `policy`, or `study help`.
+2. It retrieves the smallest relevant set of student records and curated
+  knowledge-base content.
+3. It uses a centralized academic system prompt to keep responses useful and
+  within the product's scope.
+4. It returns the answer together with intent and source metadata.
+5. It reports when reliable context is unavailable instead of presenting an
+  unsupported answer as university fact.
+
+This makes the assistant useful as a student navigation layer: it reduces
+search time, connects related academic information, and helps students move
+from a question to an action while keeping the boundary between demo data and
+official university records clear.
+
 ## AI Architecture
 
-The central AI contracts live in [`lib/ai/`](/Users/jayesh/CS/Projects/iu-academic-ai.worktrees/tech-stack-setup-nextjs-supabase/lib/ai):
+The central AI contracts live in [`lib/ai/`](lib/ai):
 
 1. Validate the incoming question.
 2. Resolve the authenticated Supabase user.
@@ -152,11 +232,11 @@ Document
 ```
 
 The current demo uses a deterministic keyword retrieval fallback in
-[`lib/knowledge/retrieval.ts`](/Users/jayesh/CS/Projects/iu-academic-ai.worktrees/tech-stack-setup-nextjs-supabase/lib/knowledge/retrieval.ts).
+[`lib/knowledge/retrieval.ts`](lib/knowledge/retrieval.ts).
 Supabase pgvector contracts and migration support are available for semantic
 retrieval when embeddings and database infrastructure are configured.
 
-Documents currently live in [`knowledge/`](/Users/jayesh/CS/Projects/iu-academic-ai.worktrees/tech-stack-setup-nextjs-supabase/knowledge):
+Documents currently live in [`knowledge/`](knowledge):
 
 - Exam guidelines
 - Examination rules
@@ -188,7 +268,7 @@ The Supabase migrations define:
 - `support_requests`
 
 The academic schema is in
-[`supabase/migrations/20260914171200_academic_schema.sql`](/Users/jayesh/CS/Projects/iu-academic-ai.worktrees/tech-stack-setup-nextjs-supabase/supabase/migrations/20260914171200_academic_schema.sql).
+[`supabase/migrations/20260914171200_academic_schema.sql`](supabase/migrations/20260914171200_academic_schema.sql).
 
 ## Authentication
 
@@ -231,18 +311,12 @@ Install dependencies:
 npm install
 ```
 
-Copy the environment template:
-
-```bash
-cp .env.example .env.local
-```
+Create a `.env.local` file in the project root and provide the variables below.
 
 Apply the SQL files in `supabase/migrations/` to the Supabase project. Enable
 the `vector` extension if pgvector retrieval is being used.
 
 ## Environment Variables
-
-Create `.env.local` from [`.env.example`](/Users/jayesh/CS/Projects/iu-academic-ai.worktrees/tech-stack-setup-nextjs-supabase/.env.example):
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
@@ -295,16 +369,27 @@ The interface identifies its records as demo data through the footer label:
 
 ## Screenshots
 
-Screenshots can be added here when the prototype is deployed or reviewed in a
-browser. The main screens to capture are:
+### Main dashboard
 
-- Public landing page
-- Login
-- Student dashboard
-- Academic Assistant with source card
-- Study Mode and MCQ practice
-- Academic modules
-- Settings with theme switcher
+The dashboard brings the student's most important academic signals into one
+view: upcoming exams, attendance, assignments, notices, and quick actions.
+
+![IU Academic AI main dashboard](dashboard.png)
+
+### AI dashboard and assistant
+
+The AI-focused view makes conversational academic support the primary workflow,
+with chat history and contextual answers available alongside the rest of the
+student workspace.
+
+![IU Academic AI assistant dashboard](ai%20dahsboard.png)
+
+### Dark theme dashboard
+
+The same workspace is available in a dark theme for students who prefer a lower
+brightness interface.
+
+![IU Academic AI dark theme dashboard](darktheme.png)
 
 ## Future Improvements
 
