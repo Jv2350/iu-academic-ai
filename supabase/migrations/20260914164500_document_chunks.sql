@@ -29,10 +29,10 @@ language sql
 stable
 as $$
   select id, document_id, content,
-    1 - (embedding <=> query_embedding) as similarity,
+    1 - (embedding OPERATOR(extensions.<=>) query_embedding) as similarity,
     metadata
   from public.document_chunks
   where embedding is not null
-  order by embedding <=> query_embedding
+  order by embedding OPERATOR(extensions.<=>) query_embedding
   limit match_count;
 $$;

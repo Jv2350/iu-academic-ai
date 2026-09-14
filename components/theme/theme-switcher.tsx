@@ -1,9 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { Laptop, Moon, Sun } from "lucide-react";
 
 type Theme = "light" | "dark" | "system";
+
+function getStoredTheme(): Theme {
+  const storedTheme = localStorage.getItem("iu-theme");
+  return storedTheme === "light" || storedTheme === "dark" || storedTheme === "system"
+    ? storedTheme
+    : "system";
+}
+
+function subscribeToTheme(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
+function getServerTheme(): Theme {
+  return "system";
+}
 
 function applyTheme(theme: Theme) {
   const dark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
@@ -12,19 +28,16 @@ function applyTheme(theme: Theme) {
 }
 
 export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === "undefined") return "system";
-    return (localStorage.getItem("iu-theme") as Theme | null) ?? "system";
-  });
+  const theme = useSyncExternalStore(subscribeToTheme, getStoredTheme, getServerTheme);
 
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
 
   function changeTheme(next: Theme) {
-    setTheme(next);
     localStorage.setItem("iu-theme", next);
     applyTheme(next);
+    window.dispatchEvent(new StorageEvent("storage", { key: "iu-theme", newValue: next }));
   }
 
   return (

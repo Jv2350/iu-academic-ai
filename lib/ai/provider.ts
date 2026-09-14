@@ -1,49 +1,111 @@
+import OpenAI from "openai";
 import type { GenerateTextInput, LlmProvider } from "./types";
 
-const DEFAULT_BASE_URL = "https://api.openai.com/v1";
+const DEFAULT_BASE_URL = "https://router.huggingface.co/v1";
+const DEFAULT_MODEL = "openai/gpt-oss-120b";
 
-export class OpenAiCompatibleProvider implements LlmProvider {
+export class HuggingFaceProvider implements LlmProvider {
+  private readonly client: OpenAI;
+
   constructor(
     private readonly apiKey: string,
-    private readonly model: string,
-    private readonly baseUrl = DEFAULT_BASE_URL,
-  ) {}
+    private readonly model: string = DEFAULT_MODEL,
+    private readonly baseUrl: string = DEFAULT_BASE_URL,
+  ) {
+    this.client = new OpenAI({
+      apiKey: this.apiKey,
+      baseURL: this.baseUrl,
+    });
+  }
 
   async generateText({ messages, context }: GenerateTextInput) {
-    const requestMessages = context
-      ? [
-          {
-            role: "system" as const,
-            content: `Use the following academic document context when it is relevant. If it does not answer the question, say so.\n\n${context}`,
-          },
-          ...messages,
-        ]
-      : messages;
+    const systemInstruction = `
+You are IU Academic AI, a domain-specific academic assistant for students.
 
-    const response = await fetch(`${this.baseUrl.replace(/\/$/, "")}/chat/completions`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        "Content-Type": "application/json",
+Your primary purpose is to help students with academic and university-related questions.
+
+You can help with:
+- Examinations
+- Examination guidelines
+- Timetables
+- Attendance
+- Assignments
+- Syllabus
+- Academic calendar
+- University notices
+- Academic events
+- Library information
+- Academic policies
+- Study assistance
+- Exam preparation
+- Academic subject explanations
+
+IMPORTANT RULES:
+
+1. You are NOT a general-purpose chatbot.
+
+2. For university-specific information, only use information provided
+   by the application's academic data or knowledge base.
+
+3. Never invent:
+   - Exam dates
+   - Exam venues
+   - Assignment deadlines
+   - Attendance policies
+   - Faculty information
+   - University notices
+   - University events
+   - Student records
+
+4. If university-specific information is not available, say:
+   "I couldn't find reliable information about that in the available
+   academic data."
+
+5. You may explain general academic concepts such as:
+   - Cybersecurity
+   - Networking
+   - Database systems
+   - Programming
+   - Digital forensics
+   - Cloud computing
+   - Other academic subjects
+
+6. For questions unrelated to academics or university activities,
+   politely explain that you are focused on academic assistance.
+
+7. Keep answers clear, concise, student-friendly and professional.
+
+${
+  context
+    ? `
+
+ACADEMIC KNOWLEDGE CONTEXT:
+
+${context}
+
+Use this context when relevant. Do not invent information that is
+not supported by the context.`
+    : ""
+}
+`;
+
+    const requestMessages = [
+      {
+        role: "system" as const,
+        content: systemInstruction,
       },
-      body: JSON.stringify({
-        model: this.model,
-        messages: requestMessages,
-      }),
-      cache: "no-store",
+      ...messages.filter((message) => message.role !== "system"),
+    ];
+
+    const response = await this.client.chat.completions.create({
+      model: this.model,
+      messages: requestMessages,
     });
 
-    if (!response.ok) {
-      throw new Error(`LLM request failed with status ${response.status}`);
-    }
-
-    const payload: unknown = await response.json();
-    const content = (payload as {
-      choices?: Array<{ message?: { content?: unknown } }>;
-    }).choices?.[0]?.message?.content;
+    const content = response.choices[0]?.message?.content;
 
     if (typeof content !== "string" || !content.trim()) {
-      throw new Error("LLM response did not contain text");
+      throw new Error("Hugging Face response did not contain text");
     }
 
     return content;
@@ -51,16 +113,13 @@ export class OpenAiCompatibleProvider implements LlmProvider {
 }
 
 export function getLlmProvider(): LlmProvider {
-  const apiKey = process.env.LLM_API_KEY;
-  const model = process.env.LLM_MODEL;
+  const apiKey = process.env.HF_TOKEN;
+  const model = process.env.LLM_MODEL || DEFAULT_MODEL;
+  const baseUrl = process.env.LLM_BASE_URL || DEFAULT_BASE_URL;
 
-  if (!apiKey || !model) {
-    throw new Error("Missing LLM_API_KEY or LLM_MODEL");
+  if (!apiKey) {
+    throw new Error("Missing HF_TOKEN");
   }
 
-  return new OpenAiCompatibleProvider(
-    apiKey,
-    model,
-    process.env.LLM_BASE_URL || DEFAULT_BASE_URL,
-  );
+  return new HuggingFaceProvider(apiKey, model, baseUrl);
 }
