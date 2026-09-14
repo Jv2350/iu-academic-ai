@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   AlarmClock,
   BookOpen,
@@ -22,6 +23,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 const navigation = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -46,6 +48,18 @@ export function Sidebar({
   onClose?: () => void;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function logout() {
+    setLoggingOut(true);
+    const response = await fetch("/api/auth/logout", { method: "POST" });
+    if (!response.ok) {
+      setLoggingOut(false);
+      return;
+    }
+    router.push("/login");
+  }
 
   return (
     <>
@@ -122,7 +136,7 @@ export function Sidebar({
               Student
             </Badge>
           </div>
-          <Button variant="ghost" className="mt-2 w-full justify-start gap-3 text-slate-500 hover:text-slate-900">
+          <Button variant="ghost" disabled={loggingOut} onClick={logout} className="mt-2 w-full justify-start gap-3 text-slate-500 hover:text-slate-900">
             <LogOut className="size-4" />
             Log out
           </Button>

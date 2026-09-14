@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, CalendarDays, ClipboardCheck, MessageCircle, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, CalendarDays, ClipboardCheck, FileText, MessageCircle, Sparkles, Target, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,13 +17,31 @@ export default function DashboardPage() {
         <div>
           <p className="mb-3 text-sm font-medium text-indigo-600">Monday, 14 September 2026</p>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">Good afternoon, Demo Student.</h1>
-          <p className="mt-2 max-w-xl text-slate-500">Stay ahead of your semester with a clearer view of what matters next.</p>
+          <p className="mt-2 max-w-xl text-slate-500">Here&apos;s your academic overview.</p>
         </div>
         <Link href="/chat">
           <Button className="gap-2 rounded-lg bg-slate-950 px-4 text-white hover:bg-slate-800">
             <Sparkles className="size-4" /> Open Academic Copilot <ArrowRight className="size-4" />
           </Button>
         </Link>
+      </section>
+
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          ["Next Exam", "Cyber Security", "18 September · 10:30 AM", "Room 204", ClipboardCheck, "text-indigo-600 bg-indigo-50"],
+          ["Attendance", "82%", "Good standing", "Across your modules", TrendingUp, "text-emerald-600 bg-emerald-50"],
+          ["Assignments", "2 pending", "Due this week", "Stay on top of deadlines", FileText, "text-amber-600 bg-amber-50"],
+          ["Upcoming Events", "3", "This month", "Academic events", CalendarDays, "text-violet-600 bg-violet-50"],
+        ].map(([label, value, detail, extra, Icon, tone]) => (
+          <Card key={label as string} className="border-slate-200/80 shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between"><p className="text-sm text-slate-500">{label as string}</p><span className={`flex size-9 items-center justify-center rounded-lg ${tone}`}><Icon className="size-4" /></span></div>
+              <p className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">{value as string}</p>
+              <p className="mt-1 text-sm font-medium text-slate-700">{detail as string}</p>
+              <p className="mt-1 text-xs text-slate-400">{extra as string}</p>
+            </CardContent>
+          </Card>
+        ))}
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
@@ -63,6 +81,23 @@ export default function DashboardPage() {
           <CardContent className="flex h-full flex-col justify-between p-6">
             <div><Badge className="border-0 bg-white/10 text-indigo-200">Academic Copilot</Badge><h2 className="mt-5 text-2xl font-semibold tracking-tight">Answers grounded in your academic information.</h2><p className="mt-3 text-sm leading-6 text-slate-300">Ask about exams, deadlines, attendance, or study plans. When reliable information is unavailable, we will tell you.</p></div>
             <Link href="/chat" className="mt-8"><Button variant="secondary" className="w-full justify-between bg-white text-slate-950 hover:bg-slate-100">Start a conversation <ArrowRight className="size-4" /></Button></Link>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="grid gap-5 lg:grid-cols-2">
+        <Card className="border-slate-200/80 shadow-sm">
+          <CardHeader><CardTitle className="text-lg">Recent notices</CardTitle><p className="text-sm text-slate-500">Updates from your university</p></CardHeader>
+          <CardContent className="space-y-4">
+            {["Examination hall guidelines published", "Library extended hours during exam week", "Semester project submission window"].map((notice, index) => (
+              <div key={notice} className="flex items-start gap-3"><span className="mt-1 size-2 rounded-full bg-indigo-500" /><div><p className="text-sm font-medium text-slate-800">{notice}</p><p className="mt-1 text-xs text-slate-400">{index + 1} day{index ? "s" : ""} ago · Academic office</p></div></div>
+            ))}
+          </CardContent>
+        </Card>
+        <Card className="border-slate-200/80 shadow-sm">
+          <CardHeader><CardTitle className="text-lg">Academic AI recommends</CardTitle><p className="text-sm text-slate-500">A little focus goes a long way</p></CardHeader>
+          <CardContent className="space-y-3">
+            {["Review Network Security before your upcoming exam.", "2 assignments are due this week.", "Your Cloud Security attendance is close to the warning threshold."].map((recommendation) => <div key={recommendation} className="flex gap-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-700"><Target className="mt-0.5 size-4 shrink-0 text-indigo-500" />{recommendation}</div>)}
           </CardContent>
         </Card>
       </section>
