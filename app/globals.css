@@ -130,6 +130,50 @@ html.dark .bg-\[\#f7f8fb\] {
   background-color: oklch(0.145 0 0);
 }
 
+/* Keep the prototype's utility-heavy pages readable when dark mode is selected. */
+html.dark [class~="bg-white"] {
+  background-color: oklch(0.205 0 0) !important;
+}
+
+html.dark [class~="bg-slate-50"],
+html.dark [class~="bg-slate-100"] {
+  background-color: oklch(0.22 0 0) !important;
+}
+
+html.dark [class~="text-slate-950"],
+html.dark [class~="text-slate-900"],
+html.dark [class~="text-slate-800"] {
+  color: oklch(0.96 0 0) !important;
+}
+
+html.dark [class~="text-slate-700"],
+html.dark [class~="text-slate-600"] {
+  color: oklch(0.82 0 0) !important;
+}
+
+html.dark [class~="text-slate-500"],
+html.dark [class~="text-slate-400"] {
+  color: oklch(0.68 0 0) !important;
+}
+
+html.dark [class~="border-slate-100"],
+html.dark [class~="border-slate-200"],
+html.dark [class~="border-slate-200/80"] {
+  border-color: oklch(1 0 0 / 12%) !important;
+}
+
+html.dark [class~="bg-indigo-50"] {
+  background-color: oklch(0.28 0.08 275) !important;
+}
+
+html.dark [class~="bg-emerald-50"] {
+  background-color: oklch(0.24 0.07 155) !important;
+}
+
+html.dark [class~="bg-amber-50"] {
+  background-color: oklch(0.27 0.07 80) !important;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
