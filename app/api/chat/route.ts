@@ -21,7 +21,10 @@ export async function POST(request: Request) {
   }
 
   const message = (body as { message?: unknown })?.message;
-  if (typeof message !== "string" || message.trim().length < 2 || message.length > 2000) {
+  if (typeof message !== "string" || message.trim().length === 0) {
+    return NextResponse.json({ error: "Please enter a question." }, { status: 400 });
+  }
+  if (message.length > 2000) {
     return NextResponse.json(
       { error: "message must be a non-empty string under 2000 characters." },
       { status: 400 },
@@ -33,6 +36,11 @@ export async function POST(request: Request) {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+    }
+
+    const requestContext = (body as { context?: unknown })?.context;
+    if (requestContext !== undefined && (typeof requestContext !== "string" || requestContext.length > 5000)) {
+      return NextResponse.json({ error: "Invalid page context." }, { status: 400 });
     }
 
     const intent = classifyIntent(message);
@@ -77,7 +85,10 @@ export async function POST(request: Request) {
 Detected intent: ${intent}
 
 Retrieved context:
-${retrievedContext}`,
+${retrievedContext}
+
+Page context:
+${typeof requestContext === "string" ? requestContext : "None provided"}`,
         },
         { role: "user", content: message.trim() },
       ],
@@ -91,7 +102,7 @@ ${retrievedContext}`,
   } catch (error) {
     console.error("Chat request failed", error);
     return NextResponse.json(
-      { error: "Unable to complete the academic assistant request." },
+      { error: "I'm having trouble connecting to the academic AI service. Please try again." },
       { status: 503 },
     );
   }

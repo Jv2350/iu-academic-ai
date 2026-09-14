@@ -23,7 +23,7 @@ export function ChatWindow({ initialPrompt = "" }: { initialPrompt?: string }) {
       if (!response.ok || !payload.answer) throw new Error(payload.error || "The assistant could not respond.");
       setMessages([...nextMessages, { role: "assistant", content: payload.answer, sources: payload.sources }]);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "The assistant could not respond.");
+      setError(requestError instanceof TypeError ? "Connection lost. Please check your connection and try again." : requestError instanceof Error ? requestError.message : "I'm having trouble connecting to the academic AI service. Please try again.");
     } finally { setLoading(false); }
   }
 

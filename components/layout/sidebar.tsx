@@ -28,7 +28,7 @@ import { useState } from "react";
 const navigation = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "AI Assistant", href: "/chat", icon: MessageCircle },
-  { label: "Study Mode", href: "/chat?mode=study", icon: BookOpen },
+  { label: "Study Mode", href: "/study", icon: BookOpen },
   { label: "Exams", href: "/exams", icon: ClipboardCheck },
   { label: "Timetable", href: "/timetable", icon: CalendarDays },
   { label: "Attendance", href: "/attendance", icon: AlarmClock },
