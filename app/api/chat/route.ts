@@ -1,39 +1,134 @@
 import { NextResponse } from "next/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getLlmProvider } from "@/lib/ai/provider";
-import type { ChatMessage } from "@/lib/ai/types";
+import { classifyIntent } from "@/lib/ai/intent";
+import { ACADEMIC_ASSISTANT_SYSTEM_PROMPT } from "@/lib/ai/system-prompt";
+import { getDemoAcademicContext } from "@/lib/academic/demo-data";
+import { formatKnowledgeContext, searchKnowledge } from "@/lib/knowledge";
+import type { SourceCitation } from "@/lib/rag/types";
 
-function isChatMessage(value: unknown): value is ChatMessage {
-  if (!value || typeof value !== "object") return false;
-  const message = value as Record<string, unknown>;
-  return (
-    (message.role === "user" ||
-      message.role === "assistant" ||
-      message.role === "system") &&
-    typeof message.content === "string" &&
-    message.content.trim().length > 0
-  );
-}
+const UNAVAILABLE =
+  "I couldn't find reliable information about that in the available academic data.";
+const UNSUPPORTED =
+  "I'm designed primarily to assist with academic information. I don't have reliable information for that request.";
 
 export async function POST(request: Request) {
-  const body: unknown = await request.json();
-  const messages = (body as { messages?: unknown })?.messages;
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
+  }
 
-  if (
-    !Array.isArray(messages) ||
-    messages.length === 0 ||
-    messages.length > 50 ||
-    !messages.every(isChatMessage)
-  ) {
-    return NextResponse.json({ error: "Invalid messages" }, { status: 400 });
+  const message = (body as { message?: unknown })?.message;
+  const requestedSessionId = (body as { sessionId?: unknown })?.sessionId;
+  if (typeof message !== "string" || message.trim().length === 0) {
+    return NextResponse.json({ error: "Please enter a question." }, { status: 400 });
+  }
+  if (message.length > 2000) {
+    return NextResponse.json(
+      { error: "message must be a non-empty string under 2000 characters." },
+      { status: 400 },
+    );
   }
 
   try {
-    const answer = await getLlmProvider().generateText({ messages });
-    return NextResponse.json({ answer });
+    const supabase = await createSupabaseServerClient();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+    }
+
+    const requestContext = (body as { context?: unknown })?.context;
+    if (requestContext !== undefined && (typeof requestContext !== "string" || requestContext.length > 5000)) {
+      return NextResponse.json({ error: "Invalid page context." }, { status: 400 });
+    }
+
+    const intent = classifyIntent(message);
+    if (intent === "unsupported") {
+      return NextResponse.json({
+        message: UNSUPPORTED,
+        intent,
+        sources: [],
+      });
+    }
+
+    const studentContext = getDemoAcademicContext(intent, user.id);
+    const knowledgeChunks = await searchKnowledge(message);
+    const knowledgeContext = formatKnowledgeContext(knowledgeChunks);
+    const sources: SourceCitation[] = [
+      ...studentContext.sources,
+      ...knowledgeChunks.map((chunk) => ({
+        title: chunk.title,
+        section: chunk.section,
+        href: chunk.href,
+        type: "academic_document" as const,
+      })),
+    ];
+    const retrievedContext = [studentContext.text, knowledgeContext]
+      .filter(Boolean)
+      .join("\n\n");
+    if (!retrievedContext) {
+      return NextResponse.json({
+        message: UNAVAILABLE,
+        intent,
+        sources: [],
+      });
+    }
+
+    const provider = getLlmProvider();
+    const answer = await provider.generateText({
+      messages: [
+        {
+          role: "system",
+          content: `${ACADEMIC_ASSISTANT_SYSTEM_PROMPT}
+
+Detected intent: ${intent}
+
+Retrieved context:
+${retrievedContext}
+
+Page context:
+${typeof requestContext === "string" ? requestContext : "None provided"}`,
+        },
+        { role: "user", content: message.trim() },
+      ],
+    });
+
+    let sessionId: string | undefined =
+      typeof requestedSessionId === "string" ? requestedSessionId : undefined;
+    const { data: student } = await supabase
+      .from("students")
+      .select("id")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+    if (student) {
+      if (!sessionId) {
+        const { data: session } = await supabase
+          .from("chat_sessions")
+          .insert({ student_id: student.id, title: message.trim().slice(0, 60) })
+          .select("id")
+          .single();
+        sessionId = session?.id;
+      }
+      if (sessionId) {
+        await supabase.from("chat_messages").insert([
+          { session_id: sessionId, role: "user", content: message.trim() },
+          { session_id: sessionId, role: "assistant", content: answer },
+        ]);
+      }
+    }
+
+    return NextResponse.json({
+      message: answer,
+      intent,
+      sources,
+      ...(sessionId ? { sessionId } : {}),
+    });
   } catch (error) {
     console.error("Chat request failed", error);
     return NextResponse.json(
-      { error: "Unable to complete the chat request" },
+      { error: "I'm having trouble connecting to the academic AI service. Please try again." },
       { status: 503 },
     );
   }
